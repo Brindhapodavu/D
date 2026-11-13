@@ -1,0 +1,41 @@
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Flatten, Dense
+from tensorflow.keras.optimizers import SGD, RMSprop, Adam
+import matplotlib.pyplot as plt
+(x,y),(xt,yt) = mnist.load_data()
+x,xt = x/255.0, xt/255.0
+
+def model(opt):
+    m = Sequential([
+        Flatten(input_shape=(28,28)),
+        Dense(128, activation='relu'),
+        Dense(10, activation='softmax')
+    ])
+    m.compile(optimizer=opt,
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+    return m
+
+opts = {
+    "GD": SGD(0.01),
+    "Momentum": SGD(0.01, momentum=0.9),
+    "RMSProp": RMSprop(0.001),
+    "Adam": Adam(0.001)
+}
+
+acc = []
+
+for name,opt in opts.items():
+    m = model(opt)
+    m.fit(x,y,epochs=3,verbose=0)
+    _,a = m.evaluate(xt,yt,verbose=0)
+    acc.append(a)
+    print(name, "Accuracy:", round(a,4))
+
+best = list(opts.keys())[acc.index(max(acc))]
+print("Best Optimizer:",best)
+plt.bar(opts.keys(),acc)
+plt.xlabel("Optimizers")
+plt.ylabel("Accuracy")
+plt.show()
