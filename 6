@@ -1,0 +1,43 @@
+
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.applications import VGG16, ResNet50
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
+from tensorflow.keras.models import Model
+from tensorflow.keras.utils import to_categorical
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+x_train, y_train = x_train[:10000], y_train[:10000]
+x_train = tf.image.grayscale_to_rgb(
+    tf.image.resize(x_train[..., None], (32, 32))).numpy()
+x_test = tf.image.grayscale_to_rgb(
+    tf.image.resize(x_test[..., None], (32, 32))).numpy()
+y_train = to_categorical(y_train, 10)
+y_test = to_categorical(y_test, 10)
+def build_model(base):
+    base.trainable = False
+    x = GlobalAveragePooling2D()(base.output)
+    out = Dense(10, activation="softmax")(x)
+    model = Model(inputs=base.input, outputs=out)
+    model.compile(optimizer="adam",
+                  loss="categorical_crossentropy",
+                  metrics=["accuracy"])
+    return model
+vgg = build_model(VGG16(weights="imagenet",
+                        include_top=False,
+                        input_shape=(32, 32, 3)))
+vgg.fit(x_train, y_train, epochs=2, batch_size=128, verbose=1)
+vgg_acc = vgg.evaluate(x_test, y_test, verbose=0)[1]
+resnet = build_model(ResNet50(weights="imagenet",
+                              include_top=False,
+                              input_shape=(32, 32, 3)))
+resnet.fit(x_train, y_train, epochs=2, batch_size=128, verbose=1)
+resnet_acc = resnet.evaluate(x_test, y_test, verbose=0)[1]
+print("VGG16 Accuracy:", round(vgg_acc * 100, 2), "%")
+print("ResNet50 Accuracy:", round(resnet_acc * 100, 2), "%")
+print("Better Model:", "VGG16" if vgg_acc > resnet_acc else "ResNet50")
+plt.bar(["VGG16", "ResNet50"],
+        [vgg_acc * 100, resnet_acc * 100])
+plt.ylabel("Accuracy (%)")
+plt.title("VGG16 vs ResNet50")
+plt.show()
