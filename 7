@@ -1,0 +1,29 @@
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+path = tf.keras.utils.get_file(
+    'shakespeare.txt',
+    'https://storage.googleapis.com/download.tensorflow.org/data/shakespeare.txt'
+)
+text = open(path, encoding='utf-8').read()[:100000]
+t = Tokenizer()
+t.fit_on_texts([text])
+s = t.texts_to_sequences([text])[0]
+X = np.array([s[i-2:i] for i in range(2, len(s))])
+y = np.array([s[i] for i in range(2, len(s))])
+model = Sequential()
+model.add(Embedding(len(t.word_index)+1, 32))
+model.add(LSTM(64))
+model.add(Dense(len(t.word_index)+1, activation='softmax'))
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+model.fit(X, y, epochs=10, batch_size=128)
+words = "the king"
+seq = t.texts_to_sequences([words])[0]
+p = model.predict(np.array([seq]), verbose=0)
+pred = np.argmax(p[0][1:]) + 1
+print("Input:", words)
+print("Next word:", t.index_word[pred])
