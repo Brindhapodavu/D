@@ -17,3 +17,29 @@ for r,i in zip(reviews,p):
 print("Accuracy:",accuracy_score(y,p)*100,"%")
 ConfusionMatrixDisplay.from_predictions(y,p,display_labels=["Negative","Positive"])
 plt.show()
+
+
+!pip -q install transformers scikit-learn matplotlib
+
+from transformers import pipeline
+from sklearn.metrics import accuracy_score, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
+
+m = pipeline("sentiment-analysis",
+    model="distilbert/distilbert-base-uncased-finetuned-sst-2-english")
+
+actual, pred = [], []
+n = int(input("Enter number of reviews: "))
+
+for i in range(n):
+    r = input("Enter review: ")
+    a = int(input("Actual sentiment (0=Negative, 1=Positive): "))
+    p = int(m(r)[0]["label"] == "POSITIVE")
+    actual.append(a)
+    pred.append(p)
+    print("Predicted:", ["Negative", "Positive"][p])
+
+print("Accuracy:", accuracy_score(actual, pred) * 100, "%")
+ConfusionMatrixDisplay.from_predictions(
+    actual, pred, display_labels=["Negative", "Positive"])
+plt.show()
